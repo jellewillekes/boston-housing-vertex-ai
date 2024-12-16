@@ -103,14 +103,15 @@ def predict_instances(instances, model):
 
 
 # Routes
-@app.get("/health")
+@app.get(os.environ.get("AIP_HEALTH_ROUTE", "/health"))
 def health():
     """Health check endpoint."""
     logger.info("Health route reached.")
     return {"status": "ok"}
 
 
-@app.post("/predict")
+
+@app.post(os.environ.get("AIP_PREDICT_ROUTE", "/predict"))
 async def predict(request: Request):
     """Prediction endpoint. Handles both JSON and JSONL input formats."""
     try:

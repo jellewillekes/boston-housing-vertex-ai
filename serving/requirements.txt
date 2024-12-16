@@ -1,4 +1,6 @@
 flask
+fastapi
+uvicorn
 tensorflow==2.18.0
 numpy
 google-cloud-storage
