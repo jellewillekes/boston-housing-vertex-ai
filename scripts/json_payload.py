@@ -1,10 +1,12 @@
 import json
 
+
 # Convert JSONL to a single JSON payload
 def convert_jsonl_to_payload(jsonl_path):
     with open(jsonl_path, "r") as f:
         instances = [json.loads(line)["input"] for line in f]
     return {"instances": instances}
+
 
 # Save the payload to a file for testing
 payload = convert_jsonl_to_payload("../prediction_input.jsonl")

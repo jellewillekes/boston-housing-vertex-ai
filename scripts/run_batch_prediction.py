@@ -1,4 +1,3 @@
-# scripts/batch_predict.py
 from google.cloud import aiplatform
 from load_config import PROJECT_ID, REGION, BUCKET
 
@@ -6,7 +5,7 @@ aiplatform.init(project=PROJECT_ID, location=REGION)
 
 
 MODEL_ID = "195963758395260928"  # Replace after upload step
-INPUT_URI = f"{BUCKET}input/prediction_input.jsonl"  # Just adjust path if needed
+INPUT_URI = f"{BUCKET}input/prediction_input.jsonl"
 OUTPUT_PREFIX = f"{BUCKET}output/"
 
 model_resource_name = f"projects/{PROJECT_ID}/locations/{REGION}/models/{MODEL_ID}"

@@ -6,6 +6,7 @@ import subprocess
 import tensorflow as tf
 from google.cloud import aiplatform
 
+
 def main():
     parser = argparse.ArgumentParser(description="Run local predictions using a model from Vertex AI Model Registry.")
     parser.add_argument("--project", type=str, required=True, help="GCP project ID.")
@@ -28,19 +29,15 @@ def main():
         raise ValueError("No artifact_uri found for this model. Ensure the model was uploaded correctly.")
 
     # We assume model.keras is stored at artifact_uri.
-    # Typically, we saved it as: gs://BUCKET/artifacts/model.keras
     model_keras_path_gcs = os.path.join(artifact_uri, "model.keras")
 
     # Create download directory if not exists
     os.makedirs(args.download_dir, exist_ok=True)
     local_model_path = os.path.join(args.download_dir, "model.keras")
 
-    # Download the model file from GCS to local
-    # Requires that 'gsutil' is installed and you are authenticated with gcloud CLI
     print(f"Downloading model from {model_keras_path_gcs} to {local_model_path}...")
     subprocess.check_call(["gsutil", "cp", model_keras_path_gcs, local_model_path])
 
-    # Load the model locally
     print(f"Loading model from {local_model_path}...")
     model = tf.keras.models.load_model(local_model_path)
 
@@ -53,7 +50,6 @@ def main():
 
     instances = np.array(data["instances"])
 
-    # Run predictions
     print("Running predictions...")
     predictions = model.predict(instances).tolist()
     print("Predictions:", predictions)
