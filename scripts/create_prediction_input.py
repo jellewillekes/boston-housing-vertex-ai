@@ -21,7 +21,7 @@ def main():
     data = load_boston_data()
 
     # Select 4 observations for prediction
-    selected_data = data[:4]
+    selected_data = data[:1]
 
     # Save to JSONL in the root folder
     script_folder = os.path.dirname(os.path.abspath(__file__))
@@ -29,7 +29,7 @@ def main():
     output_file = os.path.join(root_folder, "prediction_input.jsonl")
     save_to_jsonl(selected_data, output_file)
 
-    print(f"Saved 4 observations for prediction to {output_file}")
+    print(f"Saved 1 observation for prediction to {output_file}")
 
 
 if __name__ == "__main__":
