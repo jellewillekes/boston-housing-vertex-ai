@@ -1,19 +1,23 @@
+# Use TensorFlow base image
 FROM tensorflow/tensorflow:2.18.0
 
+# Set working directory
 WORKDIR /app
 
+# Copy application files
 COPY predict.py .
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir --ignore-installed -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Environment variables required by Vertex AI
 ENV AIP_MODEL_DIR=/app/model
 ENV AIP_PREDICT_ROUTE=/predict
 ENV AIP_HEALTH_ROUTE=/health
-ENV LOCAL_ENV=false
+ENV AIP_HTTP_PORT=8080
 
-# Expose the default port
+# Expose the port for health and prediction routes
 EXPOSE 8080
 
 # Start the FastAPI app with Uvicorn
