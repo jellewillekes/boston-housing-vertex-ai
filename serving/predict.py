@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # FastAPI app
 app = FastAPI()
 
-# Environment variables for model directory and mode
+# Environment variables for cloud or local
 LOCAL_ENV = os.environ.get("LOCAL_ENV", "true").lower() == "true"
 if LOCAL_ENV:
     root_dir = os.path.abspath(os.path.dirname(__file__))
@@ -102,7 +102,6 @@ def predict_instances(instances, model):
         raise ValueError("Prediction error.")
 
 
-# Routes
 @app.get(os.environ.get("AIP_HEALTH_ROUTE", "/health"))
 def health():
     """Health check endpoint."""
@@ -112,19 +111,31 @@ def health():
 
 @app.post(os.environ.get("AIP_PREDICT_ROUTE", "/predict"))
 async def predict(request: Request):
-    """Simplified prediction endpoint returning static predictions."""
+    """Prediction endpoint. Handles both JSON and JSONL input formats."""
     try:
-        logger.info("Received prediction request.")
+        content_type = request.headers.get("content-type")
+        if content_type == "application/jsonlines":
+            logger.info("Processing JSONL input.")
+            raw_body = await request.body()
+            instances = process_jsonl_input(raw_body.decode("utf-8"))
+        elif content_type == "application/json":
+            logger.info("Processing standard JSON input.")
+            body = await request.json()
+            instances = validate_and_transform_payload(body)
+        else:
+            raise HTTPException(status_code=415, detail="Unsupported Content-Type.")
 
-        # Simulating a response
-        predictions = [
-            {"output": 0.9},
-            {"output": 0.75},
-            {"output": 0.6}
-        ]
+        # Convert to NumPy array
+        instances_array = np.array(instances, dtype=np.float32)
 
-        logger.info(f"Returning predictions: {predictions}")
+        # Make predictions
+        predictions = predict_instances(instances_array, model)
+
         return {"predictions": predictions}
+
+    except ValueError as e:
+        logger.error(f"Validation or prediction error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
@@ -133,31 +144,18 @@ async def predict(request: Request):
 
 # @app.post(os.environ.get("AIP_PREDICT_ROUTE", "/predict"))
 # async def predict(request: Request):
-#     """Prediction endpoint. Handles both JSON and JSONL input formats."""
 #     try:
-#         content_type = request.headers.get("content-type")
-#         if content_type == "application/jsonlines":
-#             logger.info("Processing JSONL input.")
-#             raw_body = await request.body()
-#             instances = process_jsonl_input(raw_body.decode("utf-8"))
-#         elif content_type == "application/json":
-#             logger.info("Processing standard JSON input.")
-#             body = await request.json()
-#             instances = validate_and_transform_payload(body)
-#         else:
-#             raise HTTPException(status_code=415, detail="Unsupported Content-Type.")
+#         logger.info("Received prediction request.")
 #
-#         # Convert to NumPy array
-#         instances_array = np.array(instances, dtype=np.float32)
+#         # Simulating a response
+#         predictions = [
+#             {"output": 0.9},
+#             {"output": 0.75},
+#             {"output": 0.6}
+#         ]
 #
-#         # Make predictions
-#         predictions = predict_instances(instances_array, model)
-#
+#         logger.info(f"Returning predictions: {predictions}")
 #         return {"predictions": predictions}
-#
-#     except ValueError as e:
-#         logger.error(f"Validation or prediction error: {str(e)}")
-#         raise HTTPException(status_code=400, detail=str(e))
 #
 #     except Exception as e:
 #         logger.error(f"Unexpected error: {str(e)}")

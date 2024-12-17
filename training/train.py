@@ -1,4 +1,3 @@
-# training/train.py
 import argparse
 import os
 import tensorflow as tf

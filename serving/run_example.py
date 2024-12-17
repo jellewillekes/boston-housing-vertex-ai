@@ -1,6 +1,6 @@
 import requests
 
-# Define the URL for the prediction endpoint
+# Prediction endpoint
 predict_url = "http://127.0.0.1:8080/predict"
 
 try:

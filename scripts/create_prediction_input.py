@@ -20,7 +20,6 @@ def save_to_jsonl(data, output_file):
 def main():
     data = load_boston_data()
 
-    # Select 4 observations for prediction
     selected_data = data[:1]
 
     # Save to JSONL in the root folder
