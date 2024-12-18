@@ -4,7 +4,7 @@ from load_config import PROJECT_ID, REGION, BUCKET
 aiplatform.init(project=PROJECT_ID, location=REGION)
 
 
-MODEL_ID = "1631486139619606528"  # Replace after upload step
+MODEL_ID = "8311450286916894720"  # Replace after upload step
 INPUT_URI = f"{BUCKET}input/prediction_input.jsonl"
 OUTPUT_PREFIX = f"{BUCKET}output/"
 

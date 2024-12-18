@@ -2,7 +2,7 @@ from google.cloud import aiplatform, storage
 import json
 from load_config import PROJECT_ID, REGION, BUCKET, REPO
 
-ENDPOINT_ID = "4883718389278703616"
+ENDPOINT_ID = "4219437444241555456"
 GCS_INPUT_FILE = "input/prediction_input.jsonl"  # Path to file in GCS
 
 

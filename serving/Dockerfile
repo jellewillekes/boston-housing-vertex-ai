@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy application files
 COPY predict.py .
 COPY requirements.txt .
-
+COPY service-account.json ./service-account.json
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
