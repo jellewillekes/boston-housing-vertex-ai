@@ -1,7 +1,7 @@
 from google.cloud import aiplatform
 from load_config import PROJECT_ID, REGION
 
-MODEL_ID = "3082771119539748864"
+MODEL_ID = "4290861719581884416"
 ENDPOINT_NAME = "boston-housing-code"
 DEPLOYED_MODEL_NAME = "boston-housing-deployed"
 

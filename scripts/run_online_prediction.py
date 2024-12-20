@@ -29,7 +29,8 @@ def load_jsonl_from_gcs(bucket_name: str, file_path: str) -> list:
 def online_prediction(project: str, region: str, endpoint_id: str, instances: list):
     aiplatform.init(project=project, location=region)
 
-    endpoint = aiplatform.Endpoint(project=PROJECT_ID, endpoint_name=f"projects/{project}/locations/{region}/endpoints"
+    endpoint = aiplatform.Endpoint(project=PROJECT_ID,
+                                   endpoint_name=f"projects/{project}/locations/{region}/endpoints"
                                                                      f"/{endpoint_id}")
     print(f"Using endpoint: {endpoint.resource_name}")
 
