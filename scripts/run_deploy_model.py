@@ -1,9 +1,9 @@
 from google.cloud import aiplatform
 from load_config import PROJECT_ID, REGION
 
-MODEL_ID = "5263639239093911552"
-ENDPOINT_NAME = "boston-housing-test"
-DEPLOYED_MODEL_NAME = "boston-housing-deployed-model"
+MODEL_ID = "3082771119539748864"
+ENDPOINT_NAME = "boston-housing-code"
+DEPLOYED_MODEL_NAME = "boston-housing-deployed"
 
 
 def deploy_model_to_vertex_ai(project_id: str, region: str, model_id: str, endpoint_name: str,
@@ -33,7 +33,8 @@ def deploy_model_to_vertex_ai(project_id: str, region: str, model_id: str, endpo
     model.deploy(
         endpoint=endpoint,
         deployed_model_display_name=deployed_model_name,
-        machine_type="n1-standard-4"
+        machine_type="n1-standard-4",
+        service_account='712583227660-compute@developer.gserviceaccount.com'
     )
 
     print(f"Model deployed to endpoint: {endpoint.resource_name}")

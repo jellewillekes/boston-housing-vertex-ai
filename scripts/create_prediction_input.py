@@ -13,7 +13,7 @@ def load_boston_data():
 def save_to_jsonl(data, output_file):
     with open(output_file, 'w') as f:
         for row in data:
-            json.dump({"input": row.tolist()}, f)  # Convert array to list for JSON serialization
+            json.dump({"input": row.tolist()}, f)
             f.write('\n')
 
 

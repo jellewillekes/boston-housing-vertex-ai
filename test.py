@@ -5,7 +5,7 @@ from google.cloud import storage
 import tensorflow as tf
 
 # Configuration
-PROJECT_ID = "affor-models"  # Replace with your project ID
+PROJECT_ID = "affor-models"
 MODEL_BUCKET = "boston-example"
 MODEL_FILENAME = "artifacts/model.keras"
 GCS_INPUT_FILE = "input/prediction_input.jsonl"
@@ -13,17 +13,6 @@ local_model_path = "model.keras"
 
 
 def load_model_from_gcs(bucket_name: str, model_path: str, local_path: str) -> tf.keras.Model:
-    """
-    Load a Keras model from Google Cloud Storage.
-
-    Args:
-        bucket_name (str): Name of the GCS bucket containing the model.
-        model_path (str): Path to the model file in the bucket.
-        local_path (str): Local path to temporarily store the downloaded model.
-
-    Returns:
-        tf.keras.Model: Loaded Keras model.
-    """
     try:
         client = storage.Client(project=PROJECT_ID)
         bucket = client.bucket(bucket_name)
@@ -40,16 +29,6 @@ def load_model_from_gcs(bucket_name: str, model_path: str, local_path: str) -> t
 
 
 def load_jsonl_from_gcs(bucket_name: str, file_path: str) -> np.ndarray:
-    """
-    Load and parse a JSONL file from Google Cloud Storage, ensuring the data has the correct shape.
-
-    Args:
-        bucket_name (str): Name of the GCS bucket.
-        file_path (str): Path to the JSONL file in the bucket.
-
-    Returns:
-        np.ndarray: A NumPy array of instances parsed from the JSONL file.
-    """
     try:
         client = storage.Client(project=PROJECT_ID)
         bucket = client.bucket(bucket_name)
