@@ -1,5 +1,5 @@
-# Use TensorFlow base image
-FROM tensorflow/tensorflow:2.18.0
+# Use TensorFlow base image for cpu
+FROM tensorflow/tensorflow:2.18.0-cpu
 
 # Set working directory
 WORKDIR /app

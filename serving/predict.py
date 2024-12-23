@@ -5,20 +5,17 @@ from google.cloud import logging
 from google.oauth2 import service_account
 from google.logging.type import log_severity_pb2 as severity
 import tensorflow as tf
-import numpy as np
 
 AIP_STORAGE_URI = os.environ["AIP_STORAGE_URI"]
 HEALTH_ROUTE = os.environ["AIP_HEALTH_ROUTE"]
 PREDICT_ROUTE = os.environ["AIP_PREDICT_ROUTE"]
 
-# Logging with a separate service account
+# Set-up logging with seperate service account
 credentials = service_account.Credentials.from_service_account_file('./service-account.json')
 logging_client = logging.Client(credentials=credentials)
 logger = logging_client.logger('log_name')
 
-# FastAPI App
 app = FastAPI()
-# Download and load model
 model = None
 
 
@@ -30,13 +27,11 @@ def load_model():
 
     try:
         print("Loading model from AIP_STORAGE_URI...")
-        gcs_client = storage.Client()  # ADC used here, no explicit credentials
+        gcs_client = storage.Client()
 
-        # AIP_STORAGE_URI:
-        #  'model.keras' is stored at AIP_STORAGE_URI/model.keras
+        # 'model.keras' is stored at AIP_STORAGE_URI/model.keras
         model_path = f"{AIP_STORAGE_URI}/model.keras"
 
-        # Parse bucket and object name from AIP_STORAGE_URI
         if not model_path.startswith("gs://"):
             raise RuntimeError("AIP_STORAGE_URI does not start with gs://")
 
@@ -65,7 +60,7 @@ try:
     load_model()
 except Exception as e:
     print(f"Critical error during startup: {e}")
-    exit(1)  # If the model fails to load at startup, exit.
+    exit(1)
 
 
 @app.get(HEALTH_ROUTE, status_code=200)

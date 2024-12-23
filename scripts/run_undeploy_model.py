@@ -12,5 +12,5 @@ def undeploy_models(endpoint_id: str):
 
 
 if __name__ == "__main__":
-    ENDPOINT_ID = "4219437444241555456"
+    ENDPOINT_ID = "946164940073336832"
     undeploy_models(ENDPOINT_ID)
