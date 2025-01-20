@@ -1,50 +1,54 @@
+# run_boston_pipeline.py
+import os
+import sys
 from kfp import compiler
 from google.cloud import aiplatform
+
+# Import your pipeline function
 from pipelines.boston_pipeline import boston_pipeline
 
-# Set your environment variables
-PROJECT_ID = "affor-models"
-REGION = "europe-west1"
-BUCKET = "gs://boston-example"
 
-# Define paths and names
-PIPELINE_ROOT = f"{BUCKET}/pipeline_root"
-PIPELINE_JSON = "boston_pipeline.json"
-PIPELINE_DISPLAY_NAME = "boston-housing-pipeline"
+def compile_and_submit_pipeline(
+    project_id: str,
+    region: str,
+    bucket_name: str,
+    pipeline_name: str = "boston-housing-pipeline",
+):
+    """Compiles your KFP pipeline to JSON, then submits it to Vertex AI Pipelines."""
 
-
-def compile_pipeline():
-    """
-  Compiles the pipeline into a JSON file.
-  """
-    print("Compiling the pipeline...")
+    # 1) Compile Pipeline to JSON
+    pipeline_json = f"{pipeline_name}.json"
+    print("Compiling pipeline...")
     compiler.Compiler().compile(
         pipeline_func=boston_pipeline,
-        package_path=PIPELINE_JSON,
+        package_path=pipeline_json,
     )
-    print(f"Pipeline compiled and saved to: {PIPELINE_JSON}")
+    print(f"Compiled pipeline: {pipeline_json}")
 
+    # 2) Submit Pipeline to Vertex AI
+    #    Use aiplatform.PipelineJob to submit the compiled pipeline JSON
+    pipeline_root = f"gs://{bucket_name}/pipeline_root"
+    aiplatform.init(project=project_id, location=region)
 
-def submit_pipeline():
-    """
-  Submits the compiled pipeline to Vertex AI.
-  """
-    print("Submitting the pipeline job to Vertex AI...")
-    aiplatform.init(project=PROJECT_ID, location=REGION)
-
-    pipeline_job = aiplatform.PipelineJob(
-        display_name=PIPELINE_DISPLAY_NAME,
-        template_path=PIPELINE_JSON,
-        pipeline_root=PIPELINE_ROOT,
+    print("Submitting pipeline to Vertex AI Pipelines...")
+    job = aiplatform.PipelineJob(
+        display_name=pipeline_name,
+        template_path=pipeline_json,
+        pipeline_root=pipeline_root,
         parameter_values={
-            "project_id": PROJECT_ID,
-            "region": REGION,
+            "project_id": project_id,
+            "region": region,
+            # Add more parameters if your pipeline_func has more
         },
     )
-    pipeline_job.run(sync=True)
-    print("Pipeline submitted successfully.")
+    job.run(sync=True)  # or sync=False to return immediately
+    print("Pipeline submitted. Check Vertex AI Pipelines UI for status.")
 
 
 if __name__ == "__main__":
-    compile_pipeline()
-    submit_pipeline()
+    # Simple CLI interface
+    project_id = os.getenv("PROJECT_ID", "affor-models")
+    region = os.getenv("REGION", "europe-west1")
+    bucket_name = os.getenv("BUCKET_NAME", "boston-example")
+
+    compile_and_submit_pipeline(project_id, region, bucket_name)

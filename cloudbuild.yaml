@@ -84,6 +84,19 @@ steps:
         '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_SERVING_IMAGE_NAME}:${_TAG}'
       ]
 
+  # Compile and submit pipeline to Vertex AI
+  - name: 'python:3.10'
+    id: 'Compile & Submit Pipeline'
+    entrypoint: 'python'
+    env:
+      - "PROJECT_ID=${_PROJECT_ID}"
+      - "REGION=${_REGION}"
+      - "BUCKET_NAME=${_BUCKET_NAME}"
+    args:
+      [
+        'scripts/run_boston_pipeline.py'
+      ]
+
 artifacts:
   objects:
     location: 'gs://${_BUCKET_NAME}/'
