@@ -1,16 +1,34 @@
+# training/train.py
+
 import argparse
 import os
+import numpy as np
 import tensorflow as tf
 from model import feed_forward_net
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_dir", type=str, required=True, help="Local or cloud path to save the model")
+    parser.add_argument("--model_dir", type=str, required=True,
+                        help="Local or GCS path to save the model")
+    parser.add_argument("--data_path", type=str,
+                        help="Local or GCS path to .npz file with X_train, y_train, X_test, y_test")
     args = parser.parse_args()
 
-    # Load dataset
-    (X_train, y_train), (X_test, y_test) = tf.keras.datasets.boston_housing.load_data()
+    # Load data
+    if args.data_path:
+        print(f"Loading data from: {args.data_path}")
+        # If data_path is on GCS, the container should have gcsfuse or you need to download it
+        # For local example, just assume it's a local .npz
+        data = np.load(args.data_path)
+        X_train = data["X_train"]
+        y_train = data["y_train"]
+        X_test = data["X_test"]
+        y_test = data["y_test"]
+    else:
+        print("No data_path provided. Using built-in Boston Housing dataset.")
+        (X_train, y_train), (X_test, y_test) = tf.keras.datasets.boston_housing.load_data()
+
     input_shape = (X_train.shape[1],)
 
     # Create and train model
