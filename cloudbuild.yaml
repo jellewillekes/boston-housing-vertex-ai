@@ -1,0 +1,95 @@
+# cloudbuild.yaml
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _PROJECT_ID: "affor-models"
+  _REGION: "europe-west1"
+  _ARTIFACT_REGISTRY_REPO: "boston-example"
+  _TRAINING_IMAGE_NAME: "boston-training-image"
+  _SERVING_IMAGE_NAME: "boston-serving-image"
+  _BUCKET_NAME: "boston-example"
+
+  # Give _TAG a simple default value:
+  # This ensures the build won't fail if SHORT_SHA is not set
+  _TAG: "latest"
+
+steps:
+  # Install or upgrade pip
+  - name: 'python:3.10'
+    id: 'Upgrade pip'
+    entrypoint: 'python'
+    args: [ '-m', 'pip', 'install', '--upgrade', 'pip', '--user' ]
+
+  # Install requirements
+  - name: 'python:3.10'
+    id: 'Install Dependencies'
+    entrypoint: 'python'
+    args:
+      [
+        '-m', 'pip', 'install',
+        '--user',
+        '--no-cache-dir',
+        '-r', 'requirements.txt'
+      ]
+
+  # Run tests (store logs in file named after the tag)
+  - name: 'python:3.10'
+    id: 'Run Tests'
+    entrypoint: 'python'
+    args:
+      [
+        '-m', 'pytest',
+        '--junitxml=${_TAG}_test_log.xml'
+      ]
+
+  # Build and push TRAINING image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Training Image'
+    dir: 'training'
+    args:
+      [
+        'build',
+        '-t',
+        '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_TRAINING_IMAGE_NAME}:${_TAG}',
+        '.'
+      ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Training Image'
+    args:
+      [
+        'push',
+        '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_TRAINING_IMAGE_NAME}:${_TAG}'
+      ]
+
+  # Build and push SERVING image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Serving Image'
+    dir: 'serving'
+    args:
+      [
+        'build',
+        '-t',
+        '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_SERVING_IMAGE_NAME}:${_TAG}',
+        '.'
+      ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Serving Image'
+    args:
+      [
+        'push',
+        '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_SERVING_IMAGE_NAME}:${_TAG}'
+      ]
+
+artifacts:
+  objects:
+    location: 'gs://${_BUCKET_NAME}/'
+    paths:
+      - '${_TAG}_test_log.xml'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_TRAINING_IMAGE_NAME}:${_TAG}'
+  - '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_SERVING_IMAGE_NAME}:${_TAG}'
