@@ -1,0 +1,234 @@
+{
+  "components": {
+    "comp-deploy-model": {
+      "executorLabel": "exec-deploy-model",
+      "inputDefinitions": {
+        "parameters": {
+          "deployed_model_display_name": {
+            "defaultValue": "boston-housing",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "endpoint_display_name": {
+            "defaultValue": "boston-housing",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "model_dir": {
+            "parameterType": "STRING"
+          },
+          "project_id": {
+            "parameterType": "STRING"
+          },
+          "region": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-load-data": {
+      "executorLabel": "exec-load-data",
+      "outputDefinitions": {
+        "artifacts": {
+          "output_data": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    },
+    "comp-train-model": {
+      "executorLabel": "exec-train-model",
+      "inputDefinitions": {
+        "artifacts": {
+          "data": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "model_dir": {
+            "defaultValue": "artifacts",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "project_id": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "output_model": {
+            "artifactType": {
+              "schemaTitle": "system.Model",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    }
+  },
+  "deploymentSpec": {
+    "executors": {
+      "exec-deploy-model": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "deploy_model"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'google-cloud-aiplatform==1.71.1' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef deploy_model(\n    project_id: str,\n    region: str,\n    model_dir: str,\n    endpoint_display_name: str = \"boston-housing\",\n    deployed_model_display_name: str = \"boston-housing\",\n):\n    \"\"\"\n    Uploads the model to Vertex AI and deploys it to an endpoint.\n    The container to serve predictions is in your 'boston-serving-image'.\n    \"\"\"\n    from google.cloud import aiplatform\n\n    aiplatform.init(project=project_id, location=region)\n\n    # 3a) Upload the model (assuming model artifacts in model_dir)\n    serving_image_uri = f\"{region}-docker.pkg.dev/{project_id}/boston-example/boston-serving-image:latest\"\n    model = aiplatform.Model.upload(\n        display_name=\"boston-housing\",\n        artifact_uri=model_dir,\n        serving_container_image_uri=serving_image_uri,\n        serving_container_predict_route=\"/predict\",\n        serving_container_health_route=\"/health\",\n    )\n    print(f\"Uploaded model: {model.resource_name}\")\n\n    # 3b) Deploy to Endpoint\n    endpoints = aiplatform.Endpoint.list(filter=f\"display_name={endpoint_display_name}\")\n    if endpoints:\n        endpoint = endpoints[0]\n        print(f\"Using existing endpoint: {endpoint.display_name}\")\n    else:\n        endpoint = aiplatform.Endpoint.create(display_name=endpoint_display_name)\n        print(f\"Created endpoint: {endpoint_display_name}\")\n\n    model.deploy(\n        endpoint=endpoint,\n        deployed_model_display_name=deployed_model_display_name,\n        machine_type=\"n1-standard-4\",\n        traffic_split={\"0\": 100},\n    )\n    print(f\"Model deployed to endpoint: {endpoint.name}\")\n\n"
+          ],
+          "image": "python:3.10"
+        }
+      },
+      "exec-load-data": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "load_data"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'numpy==1.26.4' 'tensorflow==2.17.0' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef load_data(output_data: Output[Dataset]):\n    \"\"\"\n    Loads data (in real scenario, from GCS/BigQuery),\n    saves as .npz for the training container.\n    \"\"\"\n    import numpy as np\n    import tensorflow as tf\n\n    (X_train, y_train), (X_test, y_test) = tf.keras.datasets.boston_housing.load_data()\n\n    # Save to a local .npz file\n    npz_path = f\"{output_data.path}.npz\"  # .path is a directory, so we add .npz\n    np.savez(npz_path, X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)\n\n    # This is important so the next step can see the actual file\n    output_data.metadata[\"npz_file\"] = npz_path\n\n"
+          ],
+          "image": "python:3.10"
+        }
+      },
+      "exec-train-model": {
+        "container": {
+          "args": [
+            "--model_dir",
+            "{{$.inputs.parameters['model_dir']}}",
+            "--data_path",
+            "{{$.inputs.artifacts['data'].metadata['npz_file']}}"
+          ],
+          "command": [
+            "python",
+            "train.py"
+          ],
+          "image": "europe-west1-docker.pkg.dev/{{$.inputs.parameters['project_id']}}/boston-example/boston-training-image:latest"
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "name": "boston-housing-pipeline"
+  },
+  "root": {
+    "dag": {
+      "tasks": {
+        "deploy-model": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-deploy-model"
+          },
+          "dependentTasks": [
+            "train-model"
+          ],
+          "inputs": {
+            "parameters": {
+              "model_dir": {
+                "runtimeValue": {
+                  "constant": "gs://boston-example/artifacts"
+                }
+              },
+              "project_id": {
+                "componentInputParameter": "project_id"
+              },
+              "region": {
+                "componentInputParameter": "region"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "deploy-model"
+          }
+        },
+        "load-data": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-load-data"
+          },
+          "taskInfo": {
+            "name": "load-data"
+          }
+        },
+        "train-model": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-train-model"
+          },
+          "dependentTasks": [
+            "load-data"
+          ],
+          "inputs": {
+            "artifacts": {
+              "data": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "output_data",
+                  "producerTask": "load-data"
+                }
+              }
+            },
+            "parameters": {
+              "model_dir": {
+                "runtimeValue": {
+                  "constant": "gs://boston-example/artifacts"
+                }
+              },
+              "project_id": {
+                "componentInputParameter": "project_id"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "train-model"
+          }
+        }
+      }
+    },
+    "inputDefinitions": {
+      "parameters": {
+        "project_id": {
+          "defaultValue": "affor-models",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "region": {
+          "defaultValue": "europe-west1",
+          "isOptional": true,
+          "parameterType": "STRING"
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.11.0"
+}
