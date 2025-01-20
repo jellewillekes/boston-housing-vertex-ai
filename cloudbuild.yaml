@@ -10,9 +10,6 @@ substitutions:
   _TRAINING_IMAGE_NAME: "boston-training-image"
   _SERVING_IMAGE_NAME: "boston-serving-image"
   _BUCKET_NAME: "boston-example"
-
-  # Give _TAG a simple default value:
-  # This ensures the build won't fail if SHORT_SHA is not set
   _TAG: "latest"
 
 steps:
@@ -84,18 +81,22 @@ steps:
         '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/${_SERVING_IMAGE_NAME}:${_TAG}'
       ]
 
-  # Compile and submit pipeline to Vertex AI
   - name: 'python:3.10'
     id: 'Compile & Submit Pipeline'
-    entrypoint: 'python'
+    entrypoint: 'bash'
     env:
       - "PROJECT_ID=${_PROJECT_ID}"
       - "REGION=${_REGION}"
       - "BUCKET_NAME=${_BUCKET_NAME}"
     args:
-      [
-        'scripts/run_boston_pipeline.py'
-      ]
+      - '-c'
+      - |
+        pip install --no-cache-dir --upgrade pip setuptools wheel
+  
+        # Install local code as a package
+        pip install --no-cache-dir -e .
+  
+        python scripts/run_boston_pipeline.py
 
 artifacts:
   objects:
