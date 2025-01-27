@@ -4,8 +4,8 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 substitutions:
-  _PROJECT_ID: "affor-models"
-  _REGION: "europe-west1"
+  _PROJECT_ID: "set-project"
+  _REGION: "set-region"
   _ARTIFACT_REGISTRY_REPO: "boston-example"
   _TRAINING_IMAGE_NAME: "boston-training-image"
   _SERVING_IMAGE_NAME: "boston-serving-image"
